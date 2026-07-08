@@ -6,61 +6,73 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Payment — FF TopUp</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
-/* ===== PAYMENT PAGE (scoped) ===== */
-.pay-summary{background:linear-gradient(135deg,#e01e2b,#a11019);color:#fff;border-radius:16px;
-  padding:18px;margin-bottom:20px;box-shadow:0 6px 18px rgba(224,30,43,.25)}
-.ps-top{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.2)}
-.ps-dia{width:48px;height:48px;flex-shrink:0}
-.ps-info .ps-pack{font-size:19px;font-weight:800;line-height:1.1}
-.ps-info .ps-sub{font-size:12.5px;opacity:.85;margin-top:2px}
+/* ===== SUMMARY ===== */
+.pay-summary{background:linear-gradient(135deg,#e01e2b,#9e0f18);color:#fff;border-radius:18px;
+  padding:20px;margin-bottom:22px;box-shadow:0 8px 22px rgba(224,30,43,.28);position:relative;overflow:hidden}
+.pay-summary::after{content:"";position:absolute;top:-40px;right:-30px;width:130px;height:130px;
+  background:rgba(255,255,255,.08);border-radius:50%}
+.ps-top{display:flex;align-items:center;gap:14px;padding-bottom:15px;border-bottom:1px solid rgba(255,255,255,.22);position:relative;z-index:1}
+.ps-dia{width:50px;height:50px;flex-shrink:0;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.ps-info .ps-pack{font-size:20px;font-weight:800;line-height:1.1}
+.ps-info .ps-sub{font-size:12.5px;opacity:.88;margin-top:3px}
 .ps-amt{margin-left:auto;text-align:right}
-.ps-amt .a-lbl{font-size:11px;opacity:.8}
-.ps-amt .a-val{font-size:24px;font-weight:800;line-height:1}
-.ps-bottom{display:flex;justify-content:space-between;padding-top:12px;font-size:13px}
-.ps-bottom .pb-item .k{opacity:.8;font-size:11px}
-.ps-bottom .pb-item .v{font-weight:700;font-size:13.5px}
+.ps-amt .a-lbl{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.5px}
+.ps-amt .a-val{font-size:26px;font-weight:800;line-height:1;margin-top:2px}
+.ps-bottom{display:flex;justify-content:space-between;padding-top:14px;position:relative;z-index:1}
+.ps-bottom .pb-item .k{opacity:.85;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.ps-bottom .pb-item .v{font-weight:700;font-size:14px;margin-top:2px}
 
-.pay-heading{font-size:16px;font-weight:700;color:var(--ink);margin:0 0 14px 2px}
+.pay-heading{font-size:16px;font-weight:800;color:var(--ink);margin:0 0 14px 2px;display:flex;align-items:center;gap:8px}
+.pay-heading svg{width:20px;height:20px;fill:var(--red)}
 
-.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
-.method-box{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 12px;cursor:pointer;
-  display:flex;align-items:center;gap:12px;transition:.15s;text-align:left}
-.method-box:hover{border-color:var(--red);transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.06)}
+/* ===== METHOD BOXES ===== */
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.method-box{background:#fff;border:1.5px solid var(--line);border-radius:15px;padding:16px 13px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;transition:.18s;text-align:left;width:100%}
+.method-box:hover{border-color:var(--red);transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,.07)}
 .method-box:active{transform:scale(.97)}
-.method-box img{height:32px;width:auto}
-.method-box .mb-txt{font-weight:700;font-size:14px}
+.method-box .mb-ic{width:44px;height:44px;border-radius:11px;background:#f7f7f9;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.method-box .mb-ic img{height:26px;width:auto}
+.method-box .mb-ic.qr{background:#fff2f3}
+.method-box .mb-ic.qr svg{width:24px;height:24px;fill:var(--red)}
+.method-box .mb-txt{font-weight:800;font-size:14.5px}
 .method-box .mb-sub{font-size:11px;color:var(--muted);margin-top:1px}
-.method-box.qr-method .qr-ic{width:36px;height:36px;background:#fff2f3;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.method-box.qr-method .qr-ic svg{width:22px;height:22px;fill:var(--red)}
 
-.rzp-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
-.rzp-box input{width:100%;padding:13px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;outline:none}
+/* ===== RAZORPAY ===== */
+.rzp-box{background:#fff;border:1px solid var(--line);border-radius:15px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.rzp-box input{width:100%;padding:14px;border:1.5px solid #ddd;border-radius:11px;font-size:15px;outline:none}
 .rzp-box input:focus{border-color:var(--red)}
-.rzp-box .btn-pay{background:var(--red);color:#fff;border:none;padding:15px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer}
+.rzp-box .btn-pay{background:var(--red);color:#fff;border:none;padding:15px;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer}
+.rzp-box .btn-pay:active{transform:scale(.98)}
 
-/* QR OVERLAY */
-.qr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
-.qr-modal{background:#fff;border-radius:18px;padding:26px 22px;max-width:340px;width:100%;text-align:center;position:relative;animation:pop .3s ease}
-@keyframes pop{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:none}}
-.qr-modal h3{font-size:18px;color:var(--red);margin-bottom:6px}
+/* ===== QR OVERLAY ===== */
+.qr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.qr-modal{background:#fff;border-radius:20px;padding:26px 22px;max-width:340px;width:100%;text-align:center;position:relative;animation:pop .3s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes pop{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:none}}
+.qr-modal h3{font-size:19px;color:var(--red);margin-bottom:5px;font-weight:800}
 .qr-modal .qm-sub{font-size:12.5px;color:var(--muted);margin-bottom:16px}
-.qr-close{position:absolute;top:12px;right:14px;background:#f2f2f2;border:none;width:30px;height:30px;border-radius:50%;font-size:16px;color:var(--muted);cursor:pointer;line-height:1}
-.qr-timer-box{display:inline-flex;align-items:center;gap:6px;background:#fff2f3;color:var(--red);font-weight:700;padding:7px 14px;border-radius:20px;font-size:13.5px;margin-bottom:16px}
-.qr-timer-box svg{width:15px;height:15px;fill:var(--red)}
-.qr-canvas-wrap{display:inline-block;background:#fff;padding:14px;border:2px solid var(--line);border-radius:14px}
-#qrCanvas{display:block}
-.qr-amt{font-size:20px;font-weight:800;margin:16px 0 4px}
-.qr-amt-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
-.btn-download{background:#fff;border:2px solid var(--red);color:var(--red);padding:12px 22px;border-radius:11px;font-weight:700;cursor:pointer;font-size:14px;width:100%}
+.qr-close{position:absolute;top:14px;right:16px;background:#f2f2f2;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;color:var(--muted);cursor:pointer;line-height:1}
+.qr-close:active{transform:scale(.9)}
+.qr-timer-box{display:inline-flex;align-items:center;gap:7px;background:#fff2f3;color:var(--red);font-weight:800;padding:8px 16px;border-radius:22px;font-size:14px;margin-bottom:18px}
+.qr-timer-box svg{width:16px;height:16px;fill:var(--red)}
+.qr-canvas-wrap{display:inline-block;background:#fff;padding:12px;border:2px solid var(--line);border-radius:16px;min-width:224px;min-height:224px}
+.qr-canvas-wrap img{display:block;border-radius:6px}
+.qr-loading{display:flex;align-items:center;justify-content:center;width:200px;height:200px;color:var(--muted);font-size:13px}
+.qr-amt{font-size:22px;font-weight:800;margin:18px 0 3px}
+.qr-amt-sub{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+.btn-download{background:#fff;border:2px solid var(--red);color:var(--red);padding:13px 22px;border-radius:12px;font-weight:800;cursor:pointer;font-size:14.5px;width:100%}
 .btn-download:active{transform:scale(.97)}
-.auto-verify{margin-top:14px;color:var(--muted);font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.auto-verify{margin-top:16px;color:var(--muted);font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
 .pulse-dot{width:9px;height:9px;border-radius:50%;background:#1b9e4b;display:inline-block;animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
-@media(max-width:400px){.method-box{padding:14px 10px;gap:9px}.method-box img{height:28px}}
+@media(max-width:400px){
+  .method-box{padding:14px 10px;gap:10px}
+  .method-box .mb-ic{width:40px;height:40px}
+  .method-box .mb-ic img{height:22px}
+}
 </style>
 </head>
 <body class="page-enter">
@@ -77,7 +89,7 @@
 
 <main class="container">
 
-  <!-- SUMMARY (with diamond icon) -->
+  <!-- SUMMARY -->
   <div class="pay-summary">
     <div class="ps-top">
       <img src="assets/daimond_icon.png" class="ps-dia" alt="diamond">
@@ -98,32 +110,38 @@
 
   <!-- UPI MODE -->
   <section id="upiMode">
-    <h2 class="pay-heading">Choose Payment Method</h2>
+    <h2 class="pay-heading">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4H4V6h16v2z"/></svg>
+      Choose Payment Method
+    </h2>
     <div class="method-grid">
       <button type="button" class="method-box" onclick="payApp('phonepe')">
-        <img src="assets/phonepe.png" alt="PhonePe">
+        <span class="mb-ic"><img src="assets/phonepe.png" alt="PhonePe"></span>
         <div><div class="mb-txt">PhonePe</div><div class="mb-sub">Pay via app</div></div>
       </button>
       <button type="button" class="method-box" onclick="payApp('paytm')">
-        <img src="assets/paytm.png" alt="Paytm">
+        <span class="mb-ic"><img src="assets/paytm.png" alt="Paytm"></span>
         <div><div class="mb-txt">Paytm</div><div class="mb-sub">Pay via app</div></div>
       </button>
       <button type="button" class="method-box" onclick="payApp('gpay')">
-        <img src="assets/gpay.png" alt="GPay">
+        <span class="mb-ic"><img src="assets/gpay.png" alt="GPay"></span>
         <div><div class="mb-txt">GPay</div><div class="mb-sub">Pay via app</div></div>
       </button>
-      <button type="button" class="method-box qr-method" onclick="openQr()">
-        <span class="qr-ic">
+      <button type="button" class="method-box" onclick="openQr()">
+        <span class="mb-ic qr">
           <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h3v3h-2v-1h-1v-2zm5 5h3v3h-3v-1h-1v-1h1v-1zm-5 2h2v2h-2v-2z"/></svg>
         </span>
-        <div><div class="mb-txt">Pay With QR</div><div class="mb-sub">Scan & pay</div></div>
+        <div><div class="mb-txt">Pay With QR</div><div class="mb-sub">Scan &amp; pay</div></div>
       </button>
     </div>
   </section>
 
   <!-- RAZORPAY MODE -->
   <section id="rzpMode" class="hidden">
-    <h2 class="pay-heading">Pay via Razorpay</h2>
+    <h2 class="pay-heading">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4H4V6h16v2z"/></svg>
+      Pay via Razorpay
+    </h2>
     <div class="rzp-box">
       <input type="text" id="rzpUpi" placeholder="Enter your UPI ID (name@bank)">
       <input type="text" id="rzpTr" placeholder="Enter TR / Reference Code">
@@ -136,12 +154,12 @@
     <div class="qr-modal">
       <button type="button" class="qr-close" onclick="closeQr()">✕</button>
       <h3>Scan &amp; Pay</h3>
-      <p class="qm-sub">Open any UPI app and scan</p>
+      <p class="qm-sub">Open any UPI app and scan the code</p>
       <div class="qr-timer-box">
         <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-4v-2h2V7h2v6z"/></svg>
         Expires in <span id="qrTimer">05:00</span>
       </div>
-      <div class="qr-canvas-wrap"><canvas id="qrCanvas"></canvas></div>
+      <div class="qr-canvas-wrap"><div id="qrHolder"><div class="qr-loading">Generating QR…</div></div></div>
       <div class="qr-amt" id="qrAmt">-</div>
       <div class="qr-amt-sub" id="qrPackName">-</div>
       <button type="button" class="btn-download" onclick="downloadQr()">Download QR</button>
@@ -193,32 +211,41 @@ function payApp(app){
   setTimeout(function(){ window.location.href = 'upi://pay?' + p; }, 2500);
 }
 
+/* ===== QR (online image API — hamesha kaam karega) ===== */
 let timerInt;
+let currentQrSrc = '';
+
 function openQr(){
   const ov = document.getElementById('qrOverlay');
   ov.classList.remove('hidden');
   document.getElementById('qrAmt').textContent = '₹' + amount;
   document.getElementById('qrPackName').textContent = (pack.diamonds || '') + ' Diamonds';
 
-  const canvas = document.getElementById('qrCanvas');
-  // clear old QR
-  const ctx = canvas.getContext('2d');
-  if (ctx) ctx.clearRect(0,0,canvas.width,canvas.height);
+  const upiString = 'upi://pay?' + upiParams();
+  currentQrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=12&data=' + encodeURIComponent(upiString);
 
-  QRCode.toCanvas(canvas, 'upi://pay?' + upiParams(), { width: 210, margin: 2 }, function(err){
-    if (err) console.log(err);
-  });
+  const holder = document.getElementById('qrHolder');
+  holder.innerHTML = '<div class="qr-loading">Generating QR…</div>';
+
+  const img = new Image();
+  img.width = 200; img.height = 200; img.alt = 'Payment QR';
+  img.onload = function(){ holder.innerHTML = ''; holder.appendChild(img); };
+  img.onerror = function(){ holder.innerHTML = '<div class="qr-loading">QR failed. Retry.</div>'; };
+  img.src = currentQrSrc;
+
   startTimer(300);
 }
+
 function closeQr(){
   document.getElementById('qrOverlay').classList.add('hidden');
   clearInterval(timerInt);
 }
+
 function startTimer(sec){
   clearInterval(timerInt);
   const el = document.getElementById('qrTimer');
   function tick(){
-    if (sec <= 0){ clearInterval(timerInt); el.textContent = 'Expired'; return; }
+    if (sec < 0){ clearInterval(timerInt); el.textContent = 'Expired'; return; }
     const m = String(Math.floor(sec/60)).padStart(2,'0');
     const s = String(sec%60).padStart(2,'0');
     el.textContent = m + ':' + s;
@@ -227,13 +254,16 @@ function startTimer(sec){
   tick();
   timerInt = setInterval(tick, 1000);
 }
+
 function downloadQr(){
-  const c = document.getElementById('qrCanvas');
+  if (!currentQrSrc) return;
   const a = document.createElement('a');
-  a.href = c.toDataURL('image/png');
+  a.href = currentQrSrc.replace('size=250x250','size=500x500');
   a.download = 'payment-qr.png';
+  a.target = '_blank';
   a.click();
 }
+
 function payRazorpay(){
   const upi = document.getElementById('rzpUpi').value.trim();
   const tr  = document.getElementById('rzpTr').value.trim();
