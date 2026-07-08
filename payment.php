@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Payment — FF Diamonds</title>
+<title>Payment — FF TopUp</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -23,7 +23,6 @@
 
 <main class="container">
 
-  <!-- SUMMARY -->
   <div class="summary-card">
     <div class="sum-row"><span>Pack</span><b id="sumPack">-</b></div>
     <div class="sum-row"><span>Player</span><b id="sumName">-</b></div>
@@ -33,22 +32,28 @@
 
   <!-- UPI APP MODE -->
   <section id="upiMode">
-    <h2 class="section-title">Choose Payment Method</h2>
+    <h2 class="section-title center">Choose Payment Method</h2>
     <div class="pay-apps">
-      <button type="button" class="pay-app" onclick="payApp('phonepe')"><img src="assets/phonepe.png" alt="PhonePe"><span>PhonePe</span></button>
-      <button type="button" class="pay-app" onclick="payApp('paytm')"><img src="assets/paytm.png" alt="Paytm"><span>Paytm</span></button>
-      <button type="button" class="pay-app" onclick="payApp('gpay')"><img src="assets/gpay.png" alt="GPay"><span>GPay</span></button>
+      <button type="button" class="pay-app" onclick="payApp('phonepe')">
+        <img src="assets/phonepe.png" alt="PhonePe"><span>PhonePe</span>
+      </button>
+      <button type="button" class="pay-app" onclick="payApp('paytm')">
+        <img src="assets/paytm.png" alt="Paytm"><span>Paytm</span>
+      </button>
+      <button type="button" class="pay-app" onclick="payApp('gpay')">
+        <img src="assets/gpay.png" alt="GPay"><span>GPay</span>
+      </button>
     </div>
-    <button type="button" id="payQrBtn" class="btn-qr" onclick="openQr()">Pay With QR</button>
+    <button type="button" class="btn-qr" onclick="openQr()">Pay With QR</button>
   </section>
 
   <!-- RAZORPAY MODE -->
   <section id="rzpMode" class="hidden">
-    <h2 class="section-title">Pay via Razorpay</h2>
+    <h2 class="section-title center">Pay via Razorpay</h2>
     <div class="rzp-box">
       <input type="text" id="rzpUpi" placeholder="Enter your UPI ID (name@bank)">
       <input type="text" id="rzpTr" placeholder="Enter TR / Reference Code">
-      <button type="button" id="rzpPayBtn" class="btn-qr" onclick="payRazorpay()">Pay Now</button>
+      <button type="button" class="btn-qr" onclick="payRazorpay()">Pay Now</button>
     </div>
   </section>
 
@@ -56,7 +61,7 @@
   <div id="qrOverlay" class="qr-overlay hidden">
     <div class="qr-modal">
       <button type="button" class="qr-close" onclick="closeQr()">✕</button>
-      <h3 class="section-title">Scan &amp; Pay</h3>
+      <h3 class="section-title center">Scan &amp; Pay</h3>
       <div class="qr-timer">Expires in <span id="qrTimer">05:00</span></div>
       <div class="qr-canvas-wrap"><canvas id="qrCanvas"></canvas></div>
       <p class="qr-amt" id="qrAmt"></p>
@@ -86,60 +91,74 @@ document.getElementById('sumName').textContent  = acc.Name || '-';
 document.getElementById('sumUid').textContent   = acc.UID || '-';
 document.getElementById('sumPrice').textContent = '₹' + amount;
 
-// switch mode
 if (PAY_MODE === 'razorpay') {
   document.getElementById('upiMode').classList.add('hidden');
   document.getElementById('rzpMode').classList.remove('hidden');
 }
 
-function upiLink() {
-  return `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent('FF ' + (pack.diamonds || '') + ' Diamonds')}`;
+// Build UPI params
+function upiParams(){
+  return `pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent('FF ' + (pack.diamonds || '') + ' Diamonds')}`;
 }
-function payApp() { window.location.href = upiLink(); }
+
+// App-specific deep links (teeno alag app khulenge)
+function payApp(app){
+  const p = upiParams();
+  let link;
+  if (app === 'phonepe') {
+    link = 'phonepe://pay?' + p;
+  } else if (app === 'paytm') {
+    link = 'paytmmp://pay?' + p;
+  } else if (app === 'gpay') {
+    link = 'tez://upi/pay?' + p;   // Google Pay (Tez)
+  } else {
+    link = 'upi://pay?' + p;
+  }
+  window.location.href = link;
+
+  // fallback: agar specific app na khule to 2.5s baad generic UPI chooser
+  setTimeout(function(){
+    window.location.href = 'upi://pay?' + p;
+  }, 2500);
+}
 
 let timerInt;
-function openQr() {
+function openQr(){
   const ov = document.getElementById('qrOverlay');
   ov.classList.remove('hidden');
   document.getElementById('qrAmt').textContent = '₹' + amount;
-  const canvas = document.getElementById('qrCanvas');
-  QRCode.toCanvas(canvas, upiLink(), { width: 210, margin: 2 }, function(){});
+  QRCode.toCanvas(document.getElementById('qrCanvas'), 'upi://pay?' + upiParams(),
+    { width: 210, margin: 2 }, function(){});
   startTimer(300);
 }
-function closeQr() {
-  document.getElementById('qrOverlay').classList.add('hidden');
-  clearInterval(timerInt);
-}
-function startTimer(sec) {
+function closeQr(){ document.getElementById('qrOverlay').classList.add('hidden'); clearInterval(timerInt); }
+function startTimer(sec){
   clearInterval(timerInt);
   const el = document.getElementById('qrTimer');
-  timerInt = setInterval(() => {
-    if (sec <= 0) { clearInterval(timerInt); el.textContent = 'Expired'; return; }
+  timerInt = setInterval(function(){
+    if (sec <= 0){ clearInterval(timerInt); el.textContent = 'Expired'; return; }
     sec--;
-    const m = String(Math.floor(sec / 60)).padStart(2, '0');
-    const s = String(sec % 60).padStart(2, '0');
-    el.textContent = `${m}:${s}`;
+    const m = String(Math.floor(sec/60)).padStart(2,'0');
+    const s = String(sec%60).padStart(2,'0');
+    el.textContent = m + ':' + s;
   }, 1000);
 }
-function downloadQr() {
+function downloadQr(){
   const c = document.getElementById('qrCanvas');
   const a = document.createElement('a');
-  a.href = c.toDataURL('image/png');
-  a.download = 'payment-qr.png';
-  a.click();
+  a.href = c.toDataURL('image/png'); a.download = 'payment-qr.png'; a.click();
 }
-function payRazorpay() {
+function payRazorpay(){
   const upi = document.getElementById('rzpUpi').value.trim();
   const tr  = document.getElementById('rzpTr').value.trim();
-  if (!upi || !tr) { alert('Please enter both UPI ID and TR code'); return; }
-  const opt = {
-    key: RZP_KEY, amount: amount * 100, currency: 'INR',
+  if (!upi || !tr){ alert('Please enter both UPI ID and TR code'); return; }
+  new Razorpay({
+    key: RZP_KEY, amount: amount*100, currency: 'INR',
     name: UPI_NAME, description: (pack.diamonds || '') + ' Diamonds',
     prefill: { vpa: upi }, notes: { tr_code: tr, uid: acc.UID || '' },
     theme: { color: '#e01e2b' },
-    handler: function(r) { alert('Payment success: ' + r.razorpay_payment_id); }
-  };
-  new Razorpay(opt).open();
+    handler: function(r){ alert('Payment success: ' + r.razorpay_payment_id); }
+  }).open();
 }
 </script>
 </body>
