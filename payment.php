@@ -1,5 +1,4 @@
-<?php
-require 'config.php';
+<?php require 'config.php'; count_checkout();
 bump_stat('checkouts');
 $settings = get_data('settings');
 $upi_id   = $settings['upi_id'];
