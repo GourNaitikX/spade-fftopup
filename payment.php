@@ -8,6 +8,60 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+/* ===== PAYMENT PAGE (scoped) ===== */
+.pay-summary{background:linear-gradient(135deg,#e01e2b,#a11019);color:#fff;border-radius:16px;
+  padding:18px;margin-bottom:20px;box-shadow:0 6px 18px rgba(224,30,43,.25)}
+.ps-top{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.2)}
+.ps-dia{width:48px;height:48px;flex-shrink:0}
+.ps-info .ps-pack{font-size:19px;font-weight:800;line-height:1.1}
+.ps-info .ps-sub{font-size:12.5px;opacity:.85;margin-top:2px}
+.ps-amt{margin-left:auto;text-align:right}
+.ps-amt .a-lbl{font-size:11px;opacity:.8}
+.ps-amt .a-val{font-size:24px;font-weight:800;line-height:1}
+.ps-bottom{display:flex;justify-content:space-between;padding-top:12px;font-size:13px}
+.ps-bottom .pb-item .k{opacity:.8;font-size:11px}
+.ps-bottom .pb-item .v{font-weight:700;font-size:13.5px}
+
+.pay-heading{font-size:16px;font-weight:700;color:var(--ink);margin:0 0 14px 2px}
+
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+.method-box{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 12px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;transition:.15s;text-align:left}
+.method-box:hover{border-color:var(--red);transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.06)}
+.method-box:active{transform:scale(.97)}
+.method-box img{height:32px;width:auto}
+.method-box .mb-txt{font-weight:700;font-size:14px}
+.method-box .mb-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.method-box.qr-method .qr-ic{width:36px;height:36px;background:#fff2f3;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.method-box.qr-method .qr-ic svg{width:22px;height:22px;fill:var(--red)}
+
+.rzp-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.rzp-box input{width:100%;padding:13px;border:1.5px solid #ddd;border-radius:10px;font-size:15px;outline:none}
+.rzp-box input:focus{border-color:var(--red)}
+.rzp-box .btn-pay{background:var(--red);color:#fff;border:none;padding:15px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer}
+
+/* QR OVERLAY */
+.qr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.qr-modal{background:#fff;border-radius:18px;padding:26px 22px;max-width:340px;width:100%;text-align:center;position:relative;animation:pop .3s ease}
+@keyframes pop{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:none}}
+.qr-modal h3{font-size:18px;color:var(--red);margin-bottom:6px}
+.qr-modal .qm-sub{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+.qr-close{position:absolute;top:12px;right:14px;background:#f2f2f2;border:none;width:30px;height:30px;border-radius:50%;font-size:16px;color:var(--muted);cursor:pointer;line-height:1}
+.qr-timer-box{display:inline-flex;align-items:center;gap:6px;background:#fff2f3;color:var(--red);font-weight:700;padding:7px 14px;border-radius:20px;font-size:13.5px;margin-bottom:16px}
+.qr-timer-box svg{width:15px;height:15px;fill:var(--red)}
+.qr-canvas-wrap{display:inline-block;background:#fff;padding:14px;border:2px solid var(--line);border-radius:14px}
+#qrCanvas{display:block}
+.qr-amt{font-size:20px;font-weight:800;margin:16px 0 4px}
+.qr-amt-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.btn-download{background:#fff;border:2px solid var(--red);color:var(--red);padding:12px 22px;border-radius:11px;font-weight:700;cursor:pointer;font-size:14px;width:100%}
+.btn-download:active{transform:scale(.97)}
+.auto-verify{margin-top:14px;color:var(--muted);font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.pulse-dot{width:9px;height:9px;border-radius:50%;background:#1b9e4b;display:inline-block;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+@media(max-width:400px){.method-box{padding:14px 10px;gap:9px}.method-box img{height:28px}}
+</style>
 </head>
 <body class="page-enter">
 
@@ -23,37 +77,57 @@
 
 <main class="container">
 
-  <div class="summary-card">
-    <div class="sum-row"><span>Pack</span><b id="sumPack">-</b></div>
-    <div class="sum-row"><span>Player</span><b id="sumName">-</b></div>
-    <div class="sum-row"><span>UID</span><b id="sumUid">-</b></div>
-    <div class="sum-row"><span>Amount</span><b id="sumPrice">-</b></div>
+  <!-- SUMMARY (with diamond icon) -->
+  <div class="pay-summary">
+    <div class="ps-top">
+      <img src="assets/daimond_icon.png" class="ps-dia" alt="diamond">
+      <div class="ps-info">
+        <div class="ps-pack" id="sumPack">-</div>
+        <div class="ps-sub">Free Fire Diamonds</div>
+      </div>
+      <div class="ps-amt">
+        <div class="a-lbl">Amount</div>
+        <div class="a-val" id="sumPrice">-</div>
+      </div>
+    </div>
+    <div class="ps-bottom">
+      <div class="pb-item"><div class="k">Player</div><div class="v" id="sumName">-</div></div>
+      <div class="pb-item" style="text-align:right"><div class="k">UID</div><div class="v" id="sumUid">-</div></div>
+    </div>
   </div>
 
-  <!-- UPI APP MODE -->
+  <!-- UPI MODE -->
   <section id="upiMode">
-    <h2 class="section-title center">Choose Payment Method</h2>
-    <div class="pay-apps">
-      <button type="button" class="pay-app" onclick="payApp('phonepe')">
-        <img src="assets/phonepe.png" alt="PhonePe"><span>PhonePe</span>
+    <h2 class="pay-heading">Choose Payment Method</h2>
+    <div class="method-grid">
+      <button type="button" class="method-box" onclick="payApp('phonepe')">
+        <img src="assets/phonepe.png" alt="PhonePe">
+        <div><div class="mb-txt">PhonePe</div><div class="mb-sub">Pay via app</div></div>
       </button>
-      <button type="button" class="pay-app" onclick="payApp('paytm')">
-        <img src="assets/paytm.png" alt="Paytm"><span>Paytm</span>
+      <button type="button" class="method-box" onclick="payApp('paytm')">
+        <img src="assets/paytm.png" alt="Paytm">
+        <div><div class="mb-txt">Paytm</div><div class="mb-sub">Pay via app</div></div>
       </button>
-      <button type="button" class="pay-app" onclick="payApp('gpay')">
-        <img src="assets/gpay.png" alt="GPay"><span>GPay</span>
+      <button type="button" class="method-box" onclick="payApp('gpay')">
+        <img src="assets/gpay.png" alt="GPay">
+        <div><div class="mb-txt">GPay</div><div class="mb-sub">Pay via app</div></div>
+      </button>
+      <button type="button" class="method-box qr-method" onclick="openQr()">
+        <span class="qr-ic">
+          <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h3v3h-2v-1h-1v-2zm5 5h3v3h-3v-1h-1v-1h1v-1zm-5 2h2v2h-2v-2z"/></svg>
+        </span>
+        <div><div class="mb-txt">Pay With QR</div><div class="mb-sub">Scan & pay</div></div>
       </button>
     </div>
-    <button type="button" class="btn-qr" onclick="openQr()">Pay With QR</button>
   </section>
 
   <!-- RAZORPAY MODE -->
   <section id="rzpMode" class="hidden">
-    <h2 class="section-title center">Pay via Razorpay</h2>
+    <h2 class="pay-heading">Pay via Razorpay</h2>
     <div class="rzp-box">
       <input type="text" id="rzpUpi" placeholder="Enter your UPI ID (name@bank)">
       <input type="text" id="rzpTr" placeholder="Enter TR / Reference Code">
-      <button type="button" class="btn-qr" onclick="payRazorpay()">Pay Now</button>
+      <button type="button" class="btn-pay" onclick="payRazorpay()">Pay Now</button>
     </div>
   </section>
 
@@ -61,10 +135,15 @@
   <div id="qrOverlay" class="qr-overlay hidden">
     <div class="qr-modal">
       <button type="button" class="qr-close" onclick="closeQr()">✕</button>
-      <h3 class="section-title center">Scan &amp; Pay</h3>
-      <div class="qr-timer">Expires in <span id="qrTimer">05:00</span></div>
+      <h3>Scan &amp; Pay</h3>
+      <p class="qm-sub">Open any UPI app and scan</p>
+      <div class="qr-timer-box">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-4v-2h2V7h2v6z"/></svg>
+        Expires in <span id="qrTimer">05:00</span>
+      </div>
       <div class="qr-canvas-wrap"><canvas id="qrCanvas"></canvas></div>
-      <p class="qr-amt" id="qrAmt"></p>
+      <div class="qr-amt" id="qrAmt">-</div>
+      <div class="qr-amt-sub" id="qrPackName">-</div>
       <button type="button" class="btn-download" onclick="downloadQr()">Download QR</button>
       <p class="auto-verify"><span class="pulse-dot"></span> Automatic Payment Verification</p>
     </div>
@@ -96,30 +175,22 @@ if (PAY_MODE === 'razorpay') {
   document.getElementById('rzpMode').classList.remove('hidden');
 }
 
-// Build UPI params
 function upiParams(){
-  return `pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent('FF ' + (pack.diamonds || '') + ' Diamonds')}`;
+  return 'pa=' + encodeURIComponent(UPI_ID) +
+         '&pn=' + encodeURIComponent(UPI_NAME) +
+         '&am=' + amount + '&cu=INR' +
+         '&tn=' + encodeURIComponent('FF ' + (pack.diamonds || '') + ' Diamonds');
 }
 
-// App-specific deep links (teeno alag app khulenge)
 function payApp(app){
   const p = upiParams();
   let link;
-  if (app === 'phonepe') {
-    link = 'phonepe://pay?' + p;
-  } else if (app === 'paytm') {
-    link = 'paytmmp://pay?' + p;
-  } else if (app === 'gpay') {
-    link = 'tez://upi/pay?' + p;   // Google Pay (Tez)
-  } else {
-    link = 'upi://pay?' + p;
-  }
+  if (app === 'phonepe') link = 'phonepe://pay?' + p;
+  else if (app === 'paytm') link = 'paytmmp://pay?' + p;
+  else if (app === 'gpay') link = 'tez://upi/pay?' + p;
+  else link = 'upi://pay?' + p;
   window.location.href = link;
-
-  // fallback: agar specific app na khule to 2.5s baad generic UPI chooser
-  setTimeout(function(){
-    window.location.href = 'upi://pay?' + p;
-  }, 2500);
+  setTimeout(function(){ window.location.href = 'upi://pay?' + p; }, 2500);
 }
 
 let timerInt;
@@ -127,26 +198,41 @@ function openQr(){
   const ov = document.getElementById('qrOverlay');
   ov.classList.remove('hidden');
   document.getElementById('qrAmt').textContent = '₹' + amount;
-  QRCode.toCanvas(document.getElementById('qrCanvas'), 'upi://pay?' + upiParams(),
-    { width: 210, margin: 2 }, function(){});
+  document.getElementById('qrPackName').textContent = (pack.diamonds || '') + ' Diamonds';
+
+  const canvas = document.getElementById('qrCanvas');
+  // clear old QR
+  const ctx = canvas.getContext('2d');
+  if (ctx) ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  QRCode.toCanvas(canvas, 'upi://pay?' + upiParams(), { width: 210, margin: 2 }, function(err){
+    if (err) console.log(err);
+  });
   startTimer(300);
 }
-function closeQr(){ document.getElementById('qrOverlay').classList.add('hidden'); clearInterval(timerInt); }
+function closeQr(){
+  document.getElementById('qrOverlay').classList.add('hidden');
+  clearInterval(timerInt);
+}
 function startTimer(sec){
   clearInterval(timerInt);
   const el = document.getElementById('qrTimer');
-  timerInt = setInterval(function(){
+  function tick(){
     if (sec <= 0){ clearInterval(timerInt); el.textContent = 'Expired'; return; }
-    sec--;
     const m = String(Math.floor(sec/60)).padStart(2,'0');
     const s = String(sec%60).padStart(2,'0');
     el.textContent = m + ':' + s;
-  }, 1000);
+    sec--;
+  }
+  tick();
+  timerInt = setInterval(tick, 1000);
 }
 function downloadQr(){
   const c = document.getElementById('qrCanvas');
   const a = document.createElement('a');
-  a.href = c.toDataURL('image/png'); a.download = 'payment-qr.png'; a.click();
+  a.href = c.toDataURL('image/png');
+  a.download = 'payment-qr.png';
+  a.click();
 }
 function payRazorpay(){
   const upi = document.getElementById('rzpUpi').value.trim();
